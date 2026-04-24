@@ -3,6 +3,8 @@ const state = {
   selectedPath: "",
   selectedUntracked: false,
   diffMode: "unstaged",
+  lastDiffKey: "",   // track last diff request to skip redundant rerenders
+  lastDiffText: "",  // track last diff content
 };
 
 const els = {
@@ -99,6 +101,8 @@ function shortStatusLabel(file) {
   }
 }
 
+/* ---------- Status / header counters (cheap text updates) ---------- */
+
 function renderStatus(status) {
   state.status = status;
 
@@ -124,6 +128,81 @@ function renderStatus(status) {
   renderDiffActions();
 }
 
+/* ---------- File list – patch existing DOM instead of innerHTML ---------- */
+
+function fileItemKey(file) {
+  // Unique key combining path + current stage/unstage state
+  return `${file.path}|${file.staged ? "S" : ""}${file.unstaged ? "U" : ""}${file.untracked ? "N" : ""}|${file.label}`;
+}
+
+function buildFileItemHTML(file) {
+  const selected = file.path === state.selectedPath ? "selected" : "";
+  const tagClass = file.label.toLowerCase();
+  const meta = [];
+  if (file.staged) meta.push('<span class="meta-pill">S</span>');
+  if (file.unstaged && !file.untracked) meta.push('<span class="meta-pill">U</span>');
+  if (file.untracked) meta.push('<span class="meta-pill">NEW</span>');
+  const actions = [];
+  if (file.unstaged || file.untracked) {
+    actions.push(`<button class="btn btn-sm compact-action stage-action file-action" type="button" data-action="stage" title="Stage file" aria-label="Stage file">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M8 2a.75.75 0 0 1 .75.75v4.5h4.5a.75.75 0 0 1 0 1.5h-4.5v4.5a.75.75 0 0 1-1.5 0v-4.5h-4.5a.75.75 0 0 1 0-1.5h4.5v-4.5A.75.75 0 0 1 8 2Z"/></svg>
+    </button>`);
+  }
+  if (file.staged) {
+    actions.push(`<button class="btn btn-sm compact-action unstage-action file-action" type="button" data-action="unstage" title="Unstage file" aria-label="Unstage file">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M2 7.75A.75.75 0 0 1 2.75 7h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 7.75Z"/></svg>
+    </button>`);
+  }
+
+  return `
+    <div
+      class="file-button ${selected}"
+      role="button"
+      tabindex="0"
+      data-path="${escapeHtml(file.path)}"
+      data-untracked="${file.untracked ? "1" : "0"}"
+      title="${escapeHtml(file.displayPath)}"
+    >
+      <div class="file-row-actions">${actions.join("")}</div>
+      <div class="file-main">
+        <span class="file-state ${tagClass}">${shortStatusLabel(file)}</span>
+        <span class="file-path">${escapeHtml(file.displayPath)}</span>
+      </div>
+      <div class="status-meta">
+        <span class="status-tag ${tagClass}">${escapeHtml(file.label)}</span>
+        ${meta.join("")}
+      </div>
+    </div>
+  `;
+}
+
+function attachFileItemListeners(li) {
+  const el = li.querySelector(".file-button");
+  if (!el) return;
+  el.addEventListener("click", (e) => {
+    if (e.target.closest(".file-action")) return;
+    state.selectedPath = el.dataset.path || "";
+    state.selectedUntracked = el.dataset.untracked === "1";
+    loadDiff().catch((error) => setFlash(error.message, "error"));
+    renderFileList(state.status.files);
+    renderDiffActions();
+  });
+
+  li.querySelectorAll(".file-action").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      const row = button.closest(".file-item")?.querySelector(".file-button");
+      const path = row?.dataset.path || "";
+      const untracked = row?.dataset.untracked === "1";
+      state.selectedPath = path;
+      state.selectedUntracked = untracked;
+      const action = button.dataset.action;
+      await runFileAction(action, path);
+    });
+  });
+}
+
 function renderFileList(files) {
   if (!files.length) {
     els.fileList.innerHTML = `
@@ -136,78 +215,45 @@ function renderFileList(files) {
     return;
   }
 
-  els.fileList.innerHTML = files
-    .map((file) => {
-      const selected = file.path === state.selectedPath ? "selected" : "";
-      const tagClass = file.label.toLowerCase();
-      const meta = [];
-      if (file.staged) meta.push('<span class="meta-pill">S</span>');
-      if (file.unstaged && !file.untracked) meta.push('<span class="meta-pill">U</span>');
-      if (file.untracked) meta.push('<span class="meta-pill">NEW</span>');
-      const actions = [];
-      if (file.unstaged || file.untracked) {
-        actions.push(`<button class="btn btn-sm compact-action stage-action file-action" type="button" data-action="stage" title="Stage file" aria-label="Stage file">
-          <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M8 2a.75.75 0 0 1 .75.75v4.5h4.5a.75.75 0 0 1 0 1.5h-4.5v4.5a.75.75 0 0 1-1.5 0v-4.5h-4.5a.75.75 0 0 1 0-1.5h4.5v-4.5A.75.75 0 0 1 8 2Z"/></svg>
-        </button>`);
-      }
-      if (file.staged) {
-        actions.push(`<button class="btn btn-sm compact-action unstage-action file-action" type="button" data-action="unstage" title="Unstage file" aria-label="Unstage file">
-          <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M2 7.75A.75.75 0 0 1 2.75 7h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 7.75Z"/></svg>
-        </button>`);
-      }
-
-      return `
-        <li class="file-item">
-          <div
-            class="file-button ${selected}"
-            role="button"
-            tabindex="0"
-            data-path="${escapeHtml(file.path)}"
-            data-untracked="${file.untracked ? "1" : "0"}"
-            title="${escapeHtml(file.displayPath)}"
-          >
-            <div class="file-row-actions">${actions.join("")}</div>
-            <div class="file-main">
-              <span class="file-state ${tagClass}">${shortStatusLabel(file)}</span>
-              <span class="file-path">${escapeHtml(file.displayPath)}</span>
-            </div>
-            <div class="status-meta">
-              <span class="status-tag ${tagClass}">${escapeHtml(file.label)}</span>
-              ${meta.join("")}
-            </div>
-          </div>
-        </li>
-      `;
-    })
-    .join("");
-
-  els.fileList.querySelectorAll(".file-button").forEach((el) => {
-    el.addEventListener("click", (e) => {
-      if (e.target.closest('.file-action')) return;
-      state.selectedPath = el.dataset.path || "";
-      state.selectedUntracked = el.dataset.untracked === "1";
-      loadDiff().catch((error) => setFlash(error.message, "error"));
-      renderFileList(state.status.files);
-      renderDiffActions();
-    });
+  // Build a map of existing DOM items keyed by file path
+  const existingItems = new Map();
+  els.fileList.querySelectorAll("li.file-item").forEach((li) => {
+    const btn = li.querySelector(".file-button");
+    if (btn) {
+      existingItems.set(btn.dataset.path, li);
+    }
   });
 
-  els.fileList.querySelectorAll(".file-action").forEach((button) => {
-    button.addEventListener("click", async (event) => {
-      event.stopPropagation();
-      event.preventDefault();
+  const newChildren = [];
+  for (const file of files) {
+    const key = fileItemKey(file);
+    const existingLi = existingItems.get(file.path);
 
-      const row = button.closest(".file-item")?.querySelector(".file-button");
-      const path = row?.dataset.path || "";
-      const untracked = row?.dataset.untracked === "1";
-      state.selectedPath = path;
-      state.selectedUntracked = untracked;
+    if (existingLi && existingLi.dataset.key === key) {
+      // Same state – just update selected class without recreating
+      const btn = existingLi.querySelector(".file-button");
+      if (btn) {
+        btn.classList.toggle("selected", file.path === state.selectedPath);
+      }
+      newChildren.push(existingLi);
+      existingItems.delete(file.path);
+    } else {
+      // New or changed – create fresh element
+      const li = document.createElement("li");
+      li.className = "file-item";
+      li.dataset.key = key;
+      li.innerHTML = buildFileItemHTML(file);
+      attachFileItemListeners(li);
+      newChildren.push(li);
+      existingItems.delete(file.path);
+    }
+  }
 
-      const action = button.dataset.action;
-      await runFileAction(action, path);
-    });
-  });
+  // Replace children in one batch (avoids flicker vs clearing + appending)
+  els.fileList.replaceChildren(...newChildren);
 }
+
+/* ---------- Diff actions (small, OK to innerHTML) ---------- */
 
 function renderDiffActions() {
   const file = currentFile();
@@ -237,6 +283,8 @@ function renderDiffActions() {
   });
 }
 
+/* ---------- Stage / Unstage actions ---------- */
+
 async function mutatePath(endpoint, path = "") {
   await requestJSON(endpoint, {
     method: "POST",
@@ -252,12 +300,15 @@ async function runFileAction(action, path) {
   try {
     setFlash(`${verb}ing ${path || "changes"}...`);
     await mutatePath(endpoint, path);
+    // Only refresh status (file list patches in-place) and diff
     await loadStatus();
-    setFlash(`${verb}d ${path || "changes"}.`);
+    setFlash("");
   } catch (error) {
     setFlash(error.message, "error");
   }
 }
+
+/* ---------- Diff parser ---------- */
 
 function parseDiff(diffText) {
   const lines = diffText.split("\n");
@@ -298,115 +349,107 @@ function parseDiff(diffText) {
     currentFile = null;
   }
 
-  for (const line of lines) {
-    if (line.startsWith("diff --git ")) {
+  for (const raw of lines) {
+    if (raw.startsWith("diff --git")) {
       finishFile();
-      const match = /^diff --git a\/(.+?) b\/(.+)$/.exec(line);
-      currentFile = {
-        path: match ? match[2] : state.selectedPath || "Repository",
-        meta: [],
-        hunks: [],
-        additions: 0,
-        deletions: 0,
-      };
+      ensureFile();
       continue;
     }
 
-    ensureFile();
-
-    if (line.startsWith("--- ") || line.startsWith("+++ ") || line.startsWith("new file mode ") || line.startsWith("deleted file mode ") || line.startsWith("index ")) {
-      currentFile.meta.push(line);
-      if (line.startsWith("+++ ")) {
-        const nextPath = line.slice(4).replace(/^b\//, "");
-        if (nextPath !== "/dev/null") {
-          currentFile.path = nextPath;
-        }
-      }
-      if (line.startsWith("--- ") && currentFile.path === "Repository") {
-        const prevPath = line.slice(4).replace(/^a\//, "");
-        if (prevPath !== "/dev/null") {
-          currentFile.path = prevPath;
-        }
+    if (raw.startsWith("---") || raw.startsWith("+++")) {
+      ensureFile();
+      if (raw.startsWith("+++ b/")) {
+        currentFile.path = raw.slice(6);
       }
       continue;
     }
 
-    if (line.startsWith("@@")) {
+    if (raw.startsWith("@@")) {
+      ensureFile();
       finishHunk();
-      currentHunk = {
-        header: line,
-        lines: [],
-      };
+      const match = raw.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+      oldLine = match ? parseInt(match[1], 10) : 0;
+      newLine = match ? parseInt(match[2], 10) : 0;
+      currentHunk = { header: raw, lines: [] };
+      continue;
+    }
 
-      const match = /@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
-      oldLine = match ? Number(match[1]) : 0;
-      newLine = match ? Number(match[2]) : 0;
+    if (
+      raw.startsWith("index ") ||
+      raw.startsWith("old mode") ||
+      raw.startsWith("new mode") ||
+      raw.startsWith("new file mode") ||
+      raw.startsWith("deleted file mode") ||
+      raw.startsWith("similarity index") ||
+      raw.startsWith("rename from") ||
+      raw.startsWith("rename to") ||
+      raw.startsWith("Binary files")
+    ) {
+      ensureFile();
+      currentFile.meta.push(raw);
       continue;
     }
 
     if (!currentHunk) {
-      if (line) {
-        currentFile.meta.push(line);
-      }
       continue;
     }
 
-    if (line.startsWith("+") && !line.startsWith("+++")) {
+    if (raw.startsWith("+")) {
       currentHunk.lines.push({
         type: "add",
         oldNumber: "",
         newNumber: String(newLine),
         sign: "+",
-        content: line.slice(1),
+        content: raw.slice(1),
       });
-      currentFile.additions += 1;
-      newLine += 1;
-      continue;
-    }
-
-    if (line.startsWith("-") && !line.startsWith("---")) {
+      newLine++;
+      if (currentFile) currentFile.additions++;
+    } else if (raw.startsWith("-")) {
       currentHunk.lines.push({
         type: "remove",
         oldNumber: String(oldLine),
         newNumber: "",
         sign: "-",
-        content: line.slice(1),
+        content: raw.slice(1),
       });
-      currentFile.deletions += 1;
-      oldLine += 1;
-      continue;
-    }
-
-    if (line.startsWith("\\")) {
+      oldLine++;
+      if (currentFile) currentFile.deletions++;
+    } else if (raw.startsWith("\\")) {
       currentHunk.lines.push({
         type: "note",
         oldNumber: "",
         newNumber: "",
         sign: "",
-        content: line,
+        content: raw,
       });
-      continue;
+    } else {
+      const content = raw.startsWith(" ") ? raw.slice(1) : raw;
+      currentHunk.lines.push({
+        type: "context",
+        oldNumber: String(oldLine),
+        newNumber: String(newLine),
+        sign: " ",
+        content,
+      });
+      oldLine++;
+      newLine++;
     }
-
-    const content = line.startsWith(" ") ? line.slice(1) : line;
-    currentHunk.lines.push({
-      type: "context",
-      oldNumber: String(oldLine),
-      newNumber: String(newLine),
-      sign: " ",
-      content,
-    });
-    oldLine += 1;
-    newLine += 1;
   }
 
   finishFile();
-
   return files;
 }
 
+/* ---------- Diff renderer – skip rerender when content unchanged ---------- */
+
 function renderDiff(diffText) {
-  if (!diffText) {
+  // Skip rerender if diff content is identical
+  if (diffText === state.lastDiffText) {
+    return;
+  }
+  state.lastDiffText = diffText;
+
+  if (!diffText || !diffText.trim()) {
     els.diffOutput.innerHTML = `
       <div class="diff-empty">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -476,11 +519,15 @@ function renderDiff(diffText) {
   els.diffOutput.innerHTML = `<div class="diff-list">${renderedFiles}</div>`;
 }
 
+/* ---------- Mode buttons ---------- */
+
 function updateModeButtons() {
   const staged = state.diffMode === "staged";
   els.stagedModeButton.classList.toggle("selected", staged);
   els.unstagedModeButton.classList.toggle("selected", !staged);
 }
+
+/* ---------- Load status & diff ---------- */
 
 async function loadStatus() {
   const status = await requestJSON("/api/status");
@@ -518,6 +565,8 @@ async function loadDiff() {
   }
 }
 
+/* ---------- Commit ---------- */
+
 async function handleCommit(event) {
   event.preventDefault();
   const message = els.commitMessage.value.trim();
@@ -551,6 +600,8 @@ async function handleCommit(event) {
   }
 }
 
+/* ---------- Event listeners ---------- */
+
 els.refreshButton.addEventListener("click", () => {
   loadStatus().catch((error) => setFlash(error.message, "error"));
 });
@@ -574,6 +625,8 @@ els.stagedModeButton.addEventListener("click", () => {
 });
 
 els.commitForm.addEventListener("submit", handleCommit);
+
+/* ---------- Initial load ---------- */
 
 loadStatus().catch((error) => {
   renderDiff("");
