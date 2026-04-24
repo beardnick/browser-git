@@ -32,19 +32,17 @@ func openBrowser(url string) {
 	}
 }
 
-func resolveListenURL(addr string) string {
-	host, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		return fmt.Sprintf("http://localhost%s", addr)
-	}
-	if host == "" || host == "0.0.0.0" {
+func listenURL(listener net.Listener) string {
+	addr := listener.Addr().(*net.TCPAddr)
+	host := addr.IP.String()
+	if host == "0.0.0.0" || host == "::" {
 		host = "localhost"
 	}
-	return fmt.Sprintf("http://%s:%s", host, port)
+	return fmt.Sprintf("http://%s:%d", host, addr.Port)
 }
 
 func main() {
-	addr := flag.String("addr", ":8080", "HTTP listen address")
+	addr := flag.String("addr", ":0", "HTTP listen address (default: random available port)")
 	repo := flag.String("repo", "", "path to the git repository to manage")
 	noBrowser := flag.Bool("no-browser", false, "do not open browser on startup")
 	flag.Parse()
@@ -73,14 +71,21 @@ func main() {
 		log.Fatalf("create server: %v", err)
 	}
 
-	listenURL := resolveListenURL(*addr)
-	log.Printf("browser-git listening on %s for repo %s", *addr, absRepoPath)
-
-	if !*noBrowser {
-		go openBrowser(listenURL)
+	// Use net.Listen to bind the port first, so we know the actual port
+	// before starting the HTTP server (especially important for :0).
+	ln, err := net.Listen("tcp", *addr)
+	if err != nil {
+		log.Fatalf("listen: %v", err)
 	}
 
-	if err := http.ListenAndServe(*addr, server.routes()); err != nil {
-		log.Fatalf("listen: %v", err)
+	url := listenURL(ln)
+	log.Printf("browser-git listening on %s for repo %s", url, absRepoPath)
+
+	if !*noBrowser {
+		go openBrowser(url)
+	}
+
+	if err := http.Serve(ln, server.routes()); err != nil {
+		log.Fatalf("serve: %v", err)
 	}
 }
