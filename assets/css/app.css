@@ -993,10 +993,4 @@ input {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.file-item {
-  animation: fade-in var(--transition-normal) ease-out;
-}
 
-.diff-file {
-  animation: slide-up var(--transition-normal) ease-out;
-}
