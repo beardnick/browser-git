@@ -11,24 +11,36 @@
   <div class="shell">
     <header class="app-header">
       <div class="app-brand">
-        <p class="eyebrow">Browser Git</p>
-        <h1 class="app-title">Review local changes and commit quickly</h1>
+        <div class="app-brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <line x1="1.05" y1="12" x2="7" y2="12"/>
+            <line x1="17.01" y1="12" x2="22.96" y2="12"/>
+          </svg>
+        </div>
+        <div class="app-brand-text">
+          <p class="eyebrow">Browser Git</p>
+          <h1 class="app-title">Review local changes and commit quickly</h1>
+        </div>
       </div>
       <div class="app-actions">
         <span class="app-caption" id="selectionHint">Select a file to inspect its diff.</span>
-        <button id="refreshButton" class="btn btn-primary" type="button">Refresh</button>
+        <button id="refreshButton" class="btn btn-primary" type="button">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.001 7.001 0 0 1 14.95 7.16a.75.75 0 1 1-1.49.178A5.501 5.501 0 0 0 8 2.5ZM1.705 8.005a.75.75 0 0 1 .834.656 5.501 5.501 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.001 7.001 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834Z"/></svg>
+          Refresh
+        </button>
       </div>
     </header>
 
     <section id="statusFlash" class="flash flash-warn app-flash hidden" role="status"></section>
 
     <section class="status-strip" aria-label="Repository status">
-      <div class="status-chip status-chip-wide">
+      <div class="status-chip">
         <span class="status-chip-label">Branch</span>
         <strong id="branchName">-</strong>
       </div>
       <div class="status-chip repo-chip">
-        <span class="status-chip-label">Repo</span>
+        <span class="status-chip-label">Repository</span>
         <code id="repoRoot">-</code>
       </div>
       <div class="status-chip">
@@ -50,8 +62,14 @@
         <div class="Box-header panel-header">
           <h2 class="Box-title">Changed Files</h2>
           <div class="panel-actions">
-            <button id="stageAllButton" class="btn btn-sm" type="button">Stage all</button>
-            <button id="unstageAllButton" class="btn btn-sm" type="button">Unstage all</button>
+            <button id="stageAllButton" class="btn btn-sm" type="button">
+              <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.75.75 0 0 1 .75.75v4.5h4.5a.75.75 0 0 1 0 1.5h-4.5v4.5a.75.75 0 0 1-1.5 0v-4.5h-4.5a.75.75 0 0 1 0-1.5h4.5v-4.5A.75.75 0 0 1 8 2Z"/></svg>
+              Stage all
+            </button>
+            <button id="unstageAllButton" class="btn btn-sm" type="button">
+              <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 7.75A.75.75 0 0 1 2.75 7h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 7.75Z"/></svg>
+              Unstage all
+            </button>
           </div>
         </div>
         <div class="Box-body file-list-wrap">
@@ -84,14 +102,17 @@
         </div>
         <form id="commitForm" class="Box-body commit-form">
           <label class="form-label" for="commitMessage">Commit message</label>
-          <textarea id="commitMessage" class="form-control commit-message" name="message" rows="5" placeholder="Describe the change"></textarea>
+          <textarea id="commitMessage" class="form-control commit-message" name="message" rows="5" placeholder="Describe the change..."></textarea>
 
           <label class="checkbox-row">
             <input id="stageAllCheckbox" type="checkbox" checked>
             <span>Stage all tracked and untracked changes before commit</span>
           </label>
 
-          <button id="commitButton" class="btn btn-primary" type="submit">Create Commit</button>
+          <button id="commitButton" class="btn btn-primary" type="submit">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.93 8.5a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 0 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 0 1 0 1.5Zm-1.43-.75a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z"/></svg>
+            Create Commit
+          </button>
           <div id="commitResult" class="commit-result color-fg-muted" aria-live="polite"></div>
         </form>
       </section>

@@ -126,7 +126,13 @@ function renderStatus(status) {
 
 function renderFileList(files) {
   if (!files.length) {
-    els.fileList.innerHTML = '<li class="file-item"><div class="file-button"><span class="file-path">No local changes</span></div></li>';
+    els.fileList.innerHTML = `
+      <li class="file-item">
+        <div class="file-button" style="justify-content:center;padding:24px 12px;color:var(--app-faint);">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" style="margin-right:8px;opacity:0.5;"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+          <span class="file-path" style="color:var(--app-faint);">No local changes</span>
+        </div>
+      </li>`;
     return;
   }
 
@@ -140,10 +146,14 @@ function renderFileList(files) {
       if (file.untracked) meta.push('<span class="meta-pill">NEW</span>');
       const actions = [];
       if (file.unstaged || file.untracked) {
-        actions.push('<button class="btn btn-sm compact-action stage-action file-action" type="button" data-action="stage" title="Stage file" aria-label="Stage file">+</button>');
+        actions.push(`<button class="btn btn-sm compact-action stage-action file-action" type="button" data-action="stage" title="Stage file" aria-label="Stage file">
+          <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M8 2a.75.75 0 0 1 .75.75v4.5h4.5a.75.75 0 0 1 0 1.5h-4.5v4.5a.75.75 0 0 1-1.5 0v-4.5h-4.5a.75.75 0 0 1 0-1.5h4.5v-4.5A.75.75 0 0 1 8 2Z"/></svg>
+        </button>`);
       }
       if (file.staged) {
-        actions.push('<button class="btn btn-sm compact-action unstage-action file-action" type="button" data-action="unstage" title="Unstage file" aria-label="Unstage file">-</button>');
+        actions.push(`<button class="btn btn-sm compact-action unstage-action file-action" type="button" data-action="unstage" title="Unstage file" aria-label="Unstage file">
+          <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M2 7.75A.75.75 0 0 1 2.75 7h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 7.75Z"/></svg>
+        </button>`);
       }
 
       return `
@@ -206,10 +216,14 @@ function renderDiffActions() {
 
   const actions = [];
   if (file.unstaged || file.untracked) {
-    actions.push('<button class="btn btn-sm compact-action stage-action" type="button" data-action="stage-current" title="Stage file" aria-label="Stage file">+</button>');
+    actions.push(`<button class="btn btn-sm compact-action stage-action" type="button" data-action="stage-current" title="Stage file" aria-label="Stage file">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M8 2a.75.75 0 0 1 .75.75v4.5h4.5a.75.75 0 0 1 0 1.5h-4.5v4.5a.75.75 0 0 1-1.5 0v-4.5h-4.5a.75.75 0 0 1 0-1.5h4.5v-4.5A.75.75 0 0 1 8 2Z"/></svg>
+    </button>`);
   }
   if (file.staged) {
-    actions.push('<button class="btn btn-sm compact-action unstage-action" type="button" data-action="unstage-current" title="Unstage file" aria-label="Unstage file">-</button>');
+    actions.push(`<button class="btn btn-sm compact-action unstage-action" type="button" data-action="unstage-current" title="Unstage file" aria-label="Unstage file">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M2 7.75A.75.75 0 0 1 2.75 7h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 7.75Z"/></svg>
+    </button>`);
   }
 
   els.diffActions.innerHTML = actions.join("");
@@ -392,13 +406,31 @@ function parseDiff(diffText) {
 
 function renderDiff(diffText) {
   if (!diffText) {
-    els.diffOutput.innerHTML = '<div class="diff-empty">No diff output for the current selection.</div>';
+    els.diffOutput.innerHTML = `
+      <div class="diff-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        <span>No diff output for the current selection.</span>
+      </div>`;
     return;
   }
 
   const files = parseDiff(diffText);
   if (!files.length) {
-    els.diffOutput.innerHTML = '<div class="diff-empty">Diff exists but could not be rendered.</div>';
+    els.diffOutput.innerHTML = `
+      <div class="diff-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>Diff exists but could not be rendered.</span>
+      </div>`;
     return;
   }
 
