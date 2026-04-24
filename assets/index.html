@@ -10,58 +10,49 @@
 <body>
   <div class="shell">
     <header class="app-header">
-      <div>
-        <p class="eyebrow">Browser Git Client</p>
-        <h1 class="app-title">Working tree, diff, and commit in one view</h1>
+      <div class="app-brand">
+        <p class="eyebrow">Browser Git</p>
+        <h1 class="app-title">Review local changes and commit quickly</h1>
       </div>
-      <button id="refreshButton" class="btn btn-primary" type="button">Refresh</button>
+      <div class="app-actions">
+        <span class="app-caption" id="selectionHint">Select a file to inspect its diff.</span>
+        <button id="refreshButton" class="btn btn-primary" type="button">Refresh</button>
+      </div>
     </header>
 
     <section id="statusFlash" class="flash flash-warn app-flash hidden" role="status"></section>
 
-    <section class="summary-grid">
-      <article class="Box summary-card">
-        <div class="Box-header">
-          <h2 class="Box-title">Repository</h2>
-        </div>
-        <div class="Box-body">
-          <div class="summary-line">
-            <span class="summary-label">Branch</span>
-            <strong id="branchName">-</strong>
-          </div>
-          <div class="summary-line">
-            <span class="summary-label">Root</span>
-            <code id="repoRoot">-</code>
-          </div>
-        </div>
-      </article>
-
-      <article class="Box summary-card">
-        <div class="Box-header">
-          <h2 class="Box-title">Changes</h2>
-        </div>
-        <div class="Box-body stats">
-          <div class="stat-item">
-            <span class="Counter Counter--primary" id="changedCount">0</span>
-            <span>Files changed</span>
-          </div>
-          <div class="stat-item">
-            <span class="Counter" id="stagedCount">0</span>
-            <span>Staged</span>
-          </div>
-          <div class="stat-item">
-            <span class="Counter" id="unstagedCount">0</span>
-            <span>Unstaged</span>
-          </div>
-        </div>
-      </article>
+    <section class="status-strip" aria-label="Repository status">
+      <div class="status-chip status-chip-wide">
+        <span class="status-chip-label">Branch</span>
+        <strong id="branchName">-</strong>
+      </div>
+      <div class="status-chip repo-chip">
+        <span class="status-chip-label">Repo</span>
+        <code id="repoRoot">-</code>
+      </div>
+      <div class="status-chip">
+        <span class="status-chip-label">Changed</span>
+        <strong id="changedCount">0</strong>
+      </div>
+      <div class="status-chip">
+        <span class="status-chip-label">Staged</span>
+        <strong id="stagedCount">0</strong>
+      </div>
+      <div class="status-chip">
+        <span class="status-chip-label">Unstaged</span>
+        <strong id="unstagedCount">0</strong>
+      </div>
     </section>
 
     <main class="workspace">
       <section class="Box panel files-panel">
         <div class="Box-header panel-header">
           <h2 class="Box-title">Changed Files</h2>
-          <span class="text-small color-fg-muted" id="selectionHint">Select a file to inspect its diff.</span>
+          <div class="panel-actions">
+            <button id="stageAllButton" class="btn btn-sm" type="button">Stage all</button>
+            <button id="unstageAllButton" class="btn btn-sm" type="button">Unstage all</button>
+          </div>
         </div>
         <div class="Box-body file-list-wrap">
           <ul id="fileList" class="file-list" aria-live="polite"></ul>
@@ -74,13 +65,16 @@
             <h2 class="Box-title" id="diffTitle">Diff</h2>
             <p class="text-small color-fg-muted" id="diffSubtitle">Showing unstaged changes across the repository.</p>
           </div>
-          <div class="BtnGroup" role="group" aria-label="Diff mode">
-            <button id="unstagedModeButton" class="btn BtnGroup-item selected" type="button">Unstaged</button>
-            <button id="stagedModeButton" class="btn BtnGroup-item" type="button">Staged</button>
+          <div class="diff-toolbar">
+            <div id="diffActions" class="diff-actions"></div>
+            <div class="BtnGroup" role="group" aria-label="Diff mode">
+              <button id="unstagedModeButton" class="btn BtnGroup-item selected" type="button">Unstaged</button>
+              <button id="stagedModeButton" class="btn BtnGroup-item" type="button">Staged</button>
+            </div>
           </div>
         </div>
         <div class="Box-body diff-wrap">
-          <pre id="diffOutput" class="diff-output" tabindex="0"></pre>
+          <div id="diffOutput" class="diff-output" tabindex="0"></div>
         </div>
       </section>
 

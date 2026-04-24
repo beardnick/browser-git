@@ -47,6 +47,10 @@ type CommitResponse struct {
 	Output  string `json:"output"`
 }
 
+type PathRequest struct {
+	Path string `json:"path"`
+}
+
 type gitRunner struct {
 	repoPath string
 }
@@ -152,6 +156,35 @@ func (g *gitRunner) Commit(req CommitRequest) (CommitResponse, error) {
 		Summary: summary,
 		Output:  output,
 	}, nil
+}
+
+func (g *gitRunner) Stage(path string) error {
+	if strings.TrimSpace(path) == "" {
+		_, err := g.git("add", "-A")
+		return err
+	}
+
+	if _, err := g.resolvePath(path); err != nil {
+		return err
+	}
+
+	_, err := g.git("add", "-A", "--", path)
+	return err
+}
+
+func (g *gitRunner) Unstage(path string) error {
+	args := []string{"reset", "HEAD", "--"}
+	if strings.TrimSpace(path) == "" {
+		args = append(args, ".")
+	} else {
+		if _, err := g.resolvePath(path); err != nil {
+			return err
+		}
+		args = append(args, path)
+	}
+
+	_, err := g.git(args...)
+	return err
 }
 
 func (g *gitRunner) git(args ...string) (string, error) {

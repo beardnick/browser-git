@@ -27,6 +27,8 @@ func (s *server) routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/status", s.handleStatus)
 	mux.HandleFunc("/api/diff", s.handleDiff)
+	mux.HandleFunc("/api/stage", s.handleStage)
+	mux.HandleFunc("/api/unstage", s.handleUnstage)
 	mux.HandleFunc("/api/commit", s.handleCommit)
 	mux.Handle("/css/", http.FileServer(http.FS(s.assets)))
 	mux.Handle("/js/", http.FileServer(http.FS(s.assets)))
@@ -103,6 +105,46 @@ func (s *server) handleCommit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, resp)
+}
+
+func (s *server) handleStage(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	var req PathRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+
+	if err := s.git.Stage(strings.TrimSpace(req.Path)); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
+}
+
+func (s *server) handleUnstage(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	var req PathRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+
+	if err := s.git.Unstage(strings.TrimSpace(req.Path)); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
