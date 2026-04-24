@@ -158,13 +158,15 @@ function renderFileList(files) {
 
       return `
         <li class="file-item">
-          <button
+          <div
             class="file-button ${selected}"
-            type="button"
+            role="button"
+            tabindex="0"
             data-path="${escapeHtml(file.path)}"
             data-untracked="${file.untracked ? "1" : "0"}"
             title="${escapeHtml(file.displayPath)}"
           >
+            <div class="file-row-actions">${actions.join("")}</div>
             <div class="file-main">
               <span class="file-state ${tagClass}">${shortStatusLabel(file)}</span>
               <span class="file-path">${escapeHtml(file.displayPath)}</span>
@@ -173,17 +175,17 @@ function renderFileList(files) {
               <span class="status-tag ${tagClass}">${escapeHtml(file.label)}</span>
               ${meta.join("")}
             </div>
-            <div class="file-row-actions">${actions.join("")}</div>
-          </button>
+          </div>
         </li>
       `;
     })
     .join("");
 
-  els.fileList.querySelectorAll(".file-button").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.selectedPath = button.dataset.path || "";
-      state.selectedUntracked = button.dataset.untracked === "1";
+  els.fileList.querySelectorAll(".file-button").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      if (e.target.closest('.file-action')) return;
+      state.selectedPath = el.dataset.path || "";
+      state.selectedUntracked = el.dataset.untracked === "1";
       loadDiff().catch((error) => setFlash(error.message, "error"));
       renderFileList(state.status.files);
       renderDiffActions();
@@ -195,7 +197,7 @@ function renderFileList(files) {
       event.stopPropagation();
       event.preventDefault();
 
-      const row = button.closest(".file-button");
+      const row = button.closest(".file-item")?.querySelector(".file-button");
       const path = row?.dataset.path || "";
       const untracked = row?.dataset.untracked === "1";
       state.selectedPath = path;
