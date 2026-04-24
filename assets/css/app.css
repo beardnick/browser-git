@@ -36,16 +36,20 @@
   --shadow-lg: 0 8px 32px rgba(31, 35, 40, 0.08);
   --shadow-focus: 0 0 0 3px rgba(9, 105, 218, 0.3);
 
-  /* Diff */
-  --diff-add-bg: #dafbe1;
-  --diff-add-fg: #116329;
-  --diff-add-line: rgba(26, 127, 55, 0.06);
+  /* Diff – GitHub style */
+  --diff-add-bg: #e6ffec;
+  --diff-add-fg: #24292f;
+  --diff-add-line: #ccffd8;
+  --diff-add-num-bg: #ccffd8;
+  --diff-add-sign: #1a7f37;
   --diff-remove-bg: #ffebe9;
-  --diff-remove-fg: #a40e26;
-  --diff-remove-line: rgba(207, 34, 46, 0.06);
+  --diff-remove-fg: #24292f;
+  --diff-remove-line: #ffd7d5;
+  --diff-remove-num-bg: #ffd7d5;
+  --diff-remove-sign: #cf222e;
   --diff-hunk-bg: #ddf4ff;
   --diff-hunk-fg: #0550ae;
-  --diff-num: #6e7781;
+  --diff-num: rgba(27, 31, 36, 0.3);
 
   /* Geometry */
   --radius-sm: 6px;
@@ -699,7 +703,7 @@ input {
 }
 
 .diff-hunk + .diff-hunk {
-  border-top: 1px solid var(--app-border-subtle);
+  border-top: none;
 }
 
 .diff-hunk-header {
@@ -709,7 +713,6 @@ input {
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  border-bottom: 1px solid rgba(9, 105, 218, 0.12);
 }
 
 .diff-row {
@@ -723,7 +726,7 @@ input {
 }
 
 .diff-row + .diff-row {
-  border-top: 1px solid rgba(208, 215, 222, 0.35);
+  border-top: none;
 }
 
 .diff-row:hover {
@@ -735,9 +738,27 @@ input {
   color: var(--diff-add-fg);
 }
 
+.diff-row.add .diff-num {
+  background: var(--diff-add-num-bg);
+  color: var(--diff-num);
+}
+
+.diff-row.add .diff-sign {
+  color: var(--diff-add-sign);
+}
+
 .diff-row.remove {
   background: var(--diff-remove-bg);
   color: var(--diff-remove-fg);
+}
+
+.diff-row.remove .diff-num {
+  background: var(--diff-remove-num-bg);
+  color: var(--diff-num);
+}
+
+.diff-row.remove .diff-sign {
+  color: var(--diff-remove-sign);
 }
 
 .diff-row.note {
@@ -760,13 +781,11 @@ input {
 .diff-num {
   color: var(--diff-num);
   text-align: right;
-  border-right: 1px solid rgba(208, 215, 222, 0.45);
   font-size: 11px;
 }
 
 .diff-sign {
   text-align: center;
-  border-right: 1px solid rgba(208, 215, 222, 0.45);
   font-weight: 700;
 }
 
