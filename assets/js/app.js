@@ -298,11 +298,9 @@ async function runFileAction(action, path) {
   const verb = isStage ? "Stage" : "Unstage";
 
   try {
-    setFlash(`${verb}ing ${path || "changes"}...`);
     await mutatePath(endpoint, path);
     // Only refresh status (file list patches in-place) and diff
     await loadStatus();
-    setFlash("");
   } catch (error) {
     setFlash(error.message, "error");
   }
