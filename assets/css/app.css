@@ -16,11 +16,11 @@
   --app-muted: #656d76;
   --app-faint: #8b949e;
 
-  /* Accent */
-  --app-accent: #0969da;
-  --app-accent-emphasis: #0550ae;
-  --app-accent-soft: #ddf4ff;
-  --app-accent-muted: rgba(9, 105, 218, 0.08);
+  /* Accent – GitHub green */
+  --app-accent: #1a7f37;
+  --app-accent-emphasis: #116329;
+  --app-accent-soft: #dafbe1;
+  --app-accent-muted: rgba(26, 127, 55, 0.08);
 
   /* Semantic */
   --app-success: #1a7f37;
@@ -34,7 +34,7 @@
   --shadow-sm: 0 1px 2px rgba(31, 35, 40, 0.04);
   --shadow-md: 0 3px 12px rgba(31, 35, 40, 0.06);
   --shadow-lg: 0 8px 32px rgba(31, 35, 40, 0.08);
-  --shadow-focus: 0 0 0 3px rgba(9, 105, 218, 0.3);
+  --shadow-focus: 0 0 0 3px rgba(26, 127, 55, 0.3);
 
   /* Diff – GitHub style */
   --diff-add-bg: #e6ffec;
@@ -132,7 +132,7 @@ input {
   background: linear-gradient(135deg, var(--app-accent) 0%, var(--app-accent-emphasis) 100%);
   border-radius: var(--radius-md);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(9, 105, 218, 0.25);
+  box-shadow: 0 2px 8px rgba(26, 127, 55, 0.25);
 }
 
 .app-brand-icon svg {
@@ -857,7 +857,7 @@ input {
 }
 
 .commit-form .btn-primary:hover {
-  box-shadow: 0 2px 8px rgba(9, 105, 218, 0.3);
+  box-shadow: 0 2px 8px rgba(26, 127, 55, 0.3);
 }
 
 .commit-result {

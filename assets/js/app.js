@@ -252,7 +252,6 @@ async function runFileAction(action, path) {
   try {
     setFlash(`${verb}ing ${path || "changes"}...`);
     await mutatePath(endpoint, path);
-    state.diffMode = isStage ? "staged" : "unstaged";
     await loadStatus();
     setFlash(`${verb}d ${path || "changes"}.`);
   } catch (error) {
